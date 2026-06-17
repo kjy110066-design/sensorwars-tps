@@ -111,7 +111,8 @@ function applyCalibration(data, calib) {
 
 // 게임 상태 & 루프
 const gameState = createGameState();
-const clients   = { A: null, B: null };
+const clients      = { A: null, B: null };
+const relayClients = { A: null, B: null };  // relay.js 연결 (진동 명령 전달용)
 
 // 아두이노 시리얼 참조 (진동 명령 전송용)
 const serials = { A: null, B: null };
@@ -162,9 +163,11 @@ wss.on('connection', (ws, req) => {
       case 'join': {
         playerRole = msg.player;
 
-        // 릴레이 클라이언트(isRelay:true)는 clients[]에 등록하지 않음
-        // 브라우저 게임 클라이언트만 broadcast 대상으로 유지
-        if (!msg.isRelay) {
+        // relay는 relayClients[]에, 브라우저는 clients[]에 분리 등록
+        if (msg.isRelay) {
+          relayClients[playerRole] = ws;
+          ws.send(JSON.stringify({ type: 'welcome', player: playerRole }));
+        } else {
           clients[playerRole] = ws;
           ws.send(JSON.stringify({ type: 'welcome', player: playerRole }));
 
@@ -285,11 +288,12 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     console.log(`[WS] Player ${playerRole} 연결 종료`);
-    // 이 WS가 현재 등록된 clients[]와 동일할 때만 null 처리
-    // (로비→게임 전환 시 새 WS가 먼저 등록되면 덮어쓰지 않음)
     if (playerRole && clients[playerRole] === ws) {
       clients[playerRole] = null;
       broadcast({ type: 'playerDisconnected', player: playerRole });
+    }
+    if (playerRole && relayClients[playerRole] === ws) {
+      relayClients[playerRole] = null;
     }
   });
 
@@ -329,12 +333,17 @@ const gameLoop = createGameLoop(gameState, (events) => {
   // 이벤트 브로드캐스트 (vibrate는 대상 플레이어에게만 전송)
   events.forEach(ev => {
     if (ev.type === 'vibrate') {
-      // 해당 플레이어 WebSocket으로만 전송
-      const ws = clients[ev.player];
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        try { ws.send(JSON.stringify(ev)); } catch (e) {}
+      // 브라우저에 전송
+      const browserWs = clients[ev.player];
+      if (browserWs && browserWs.readyState === WebSocket.OPEN) {
+        try { browserWs.send(JSON.stringify(ev)); } catch (e) {}
       }
-      // 아두이노 시리얼로 진동 명령 전송 (Arduino는 vl + duration 파싱)
+      // relay.js에 전송 → Arduino 진동모터
+      const relayWs = relayClients[ev.player];
+      if (relayWs && relayWs.readyState === WebSocket.OPEN) {
+        try { relayWs.send(JSON.stringify(ev)); } catch (e) {}
+      }
+      // 서버에 Arduino 직접 연결된 경우 (SIM_MODE=false)
       const serial = serials[ev.player];
       if (serial) {
         const power = Math.max(ev.vl || 0, ev.vr || 0);
