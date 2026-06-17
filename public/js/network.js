@@ -16,9 +16,11 @@ class NetworkManager {
     this.serverIP = serverIP || 'localhost';
     this.port = port || 3000;
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    // localhost 기본값이면 현재 페이지 호스트(Railway 도메인 포함)를 자동 사용
-    const isLocalDefault = !serverIP || serverIP === 'localhost' || serverIP === '127.0.0.1';
-    const host = isLocalDefault ? location.host : `${this.serverIP}:${this.port}`;
+    // HTTPS(Railway 등 클라우드)에서는 포트 없이 현재 도메인 그대로 사용
+    // HTTP(로컬 개발)에서만 IP + 포트 사용
+    const host = location.protocol === 'https:'
+      ? location.host
+      : `${this.serverIP}:${this.port}`;
     const url = `${proto}://${host}`;
 
     if (this.ws) { this.ws.close(); }
