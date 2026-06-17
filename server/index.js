@@ -161,22 +161,27 @@ wss.on('connection', (ws, req) => {
     switch (msg.type) {
       case 'join': {
         playerRole = msg.player;
-        clients[playerRole] = ws;
-        ws.send(JSON.stringify({ type: 'welcome', player: playerRole }));
 
-        if (msg.mode) gameState.setMode(msg.mode);
-        if (msg.spawnA && msg.spawnB) gameState.updateSpawnPositions(msg.spawnA, msg.spawnB);
+        // 릴레이 클라이언트(isRelay:true)는 clients[]에 등록하지 않음
+        // 브라우저 게임 클라이언트만 broadcast 대상으로 유지
+        if (!msg.isRelay) {
+          clients[playerRole] = ws;
+          ws.send(JSON.stringify({ type: 'welcome', player: playerRole }));
 
-        // 이미 연결된 상대방에게 알림
-        const other = playerRole === 'A' ? 'B' : 'A';
-        if (clients[other] && clients[other].readyState === WebSocket.OPEN) {
-          clients[other].send(JSON.stringify({ type: 'playerJoined', player: playerRole }));
-          clients[playerRole].send(JSON.stringify({ type: 'playerJoined', player: other }));
+          if (msg.mode) gameState.setMode(msg.mode);
+          if (msg.spawnA && msg.spawnB) gameState.updateSpawnPositions(msg.spawnA, msg.spawnB);
+
+          // 이미 연결된 상대방에게 알림
+          const other = playerRole === 'A' ? 'B' : 'A';
+          if (clients[other] && clients[other].readyState === WebSocket.OPEN) {
+            clients[other].send(JSON.stringify({ type: 'playerJoined', player: playerRole }));
+            clients[playerRole].send(JSON.stringify({ type: 'playerJoined', player: other }));
+          }
         }
 
-        // 현재 게임 상태 전송
+        // 현재 게임 상태 전송 (릴레이 포함)
         ws.send(JSON.stringify({ type: 'gameState', state: gameState.state }));
-        console.log(`[WS] Player ${playerRole} 입장`);
+        console.log(`[WS] Player ${playerRole} 입장${msg.isRelay ? ' (릴레이)' : ''}`);
         break;
       }
 
@@ -280,7 +285,9 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     console.log(`[WS] Player ${playerRole} 연결 종료`);
-    if (playerRole) {
+    // 이 WS가 현재 등록된 clients[]와 동일할 때만 null 처리
+    // (로비→게임 전환 시 새 WS가 먼저 등록되면 덮어쓰지 않음)
+    if (playerRole && clients[playerRole] === ws) {
       clients[playerRole] = null;
       broadcast({ type: 'playerDisconnected', player: playerRole });
     }
