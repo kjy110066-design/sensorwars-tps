@@ -16,7 +16,10 @@ class NetworkManager {
     this.serverIP = serverIP || 'localhost';
     this.port = port || 3000;
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${proto}://${this.serverIP}:${this.port}`;
+    // localhost 기본값이면 현재 페이지 호스트(Railway 도메인 포함)를 자동 사용
+    const isLocalDefault = !serverIP || serverIP === 'localhost' || serverIP === '127.0.0.1';
+    const host = isLocalDefault ? location.host : `${this.serverIP}:${this.port}`;
+    const url = `${proto}://${host}`;
 
     if (this.ws) { this.ws.close(); }
 
@@ -54,7 +57,7 @@ class NetworkManager {
     this.ws.onclose = () => {
       this.connected = false;
       console.log('[Network] 연결 끊김 - 3초 후 재연결');
-      this.reconnectTimer = setTimeout(() => this.connect(this.serverIP, this.port), 3000);
+      this.reconnectTimer = setTimeout(() => this.connect(this.serverIP || null, this.port), 3000);
     };
 
     this.ws.onerror = (e) => {
