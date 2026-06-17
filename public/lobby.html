@@ -415,9 +415,12 @@ const MODE_DESCS = {
 };
 
 function connectToServer() {
-  const ip = document.getElementById('serverIP').value.trim() || 'localhost';
+  const inputIP = document.getElementById('serverIP').value.trim() || 'localhost';
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const url = `${proto}://${ip}:3000`;
+  // localhost 기본값이면 현재 페이지 호스트(Railway 도메인 포함) 자동 사용
+  const isLocalDefault = inputIP === 'localhost' || inputIP === '127.0.0.1';
+  const host = isLocalDefault ? location.host : `${inputIP}:3000`;
+  const url = `${proto}://${host}`;
 
   if (ws) { ws.close(); ws = null; }
 
@@ -657,12 +660,11 @@ function applyPort() {
 // 초기화
 window.onload = () => {
   selectMode('deathmatch');
-  connectToServer();
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    document.getElementById('serverIP').value = 'localhost';
-  } else {
+  // IP 입력창 먼저 설정 후 연결 (순서 중요)
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     document.getElementById('serverIP').value = location.hostname;
   }
+  connectToServer();
 };
 </script>
 </body>
