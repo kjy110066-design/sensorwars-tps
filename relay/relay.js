@@ -56,9 +56,9 @@ function connect() {
     console.log('[WS] 서버 접속 완료');
     clearTimeout(reconnectTimer);
 
-    // 플레이어로 입장
-    ws.send(JSON.stringify({ type: 'join', player: PLAYER }));
-    console.log(`[WS] Player ${PLAYER} 입장 전송`);
+    // 플레이어로 입장 (isRelay: 브라우저 broadcast 대상에서 제외)
+    ws.send(JSON.stringify({ type: 'join', player: PLAYER, isRelay: true }));
+    console.log(`[WS] Player ${PLAYER} 입장 전송 (릴레이 모드)`);
   });
 
   ws.on('message', (raw) => {
