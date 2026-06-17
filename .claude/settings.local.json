@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(cd \"C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game\"; Get-ChildItem -Recurse -Force | Select-Object @{n='Path';e={$_.FullName.Replace\\('C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game\\\\', ''\\)}} | Format-Table -AutoSize)",
+      "Bash(dir \"C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game\\\\character - Copy\")",
+      "Bash(dir \"C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game\\\\animations - Copy\")",
+      "Bash(dir C:\\\\Users\\\\kjy11\\\\OneDrive\\\\바탕 화면\\\\SCHOOL\\\\4-1\\\\iot\\\\game *)",
+      "Bash(Sort-Object FullName)",
+      "Bash(node -e \"require\\('./server/gameState.js'\\); console.log\\('gameState OK'\\)\")",
+      "Bash(node -e \"require\\('./server/index.js'\\)\")",
+      "Bash(node server/index.js)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(findstr LISTENING)"
+    ]
+  }
+}
